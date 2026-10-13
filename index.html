@@ -17,7 +17,7 @@
 html{scroll-behavior:smooth}
 body{font-family:Manrope,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;overflow-x:hidden}
 [hidden]{display:none !important}
-#prog{position:fixed;top:0;left:0;height:3px;width:0;z-index:300;background:linear-gradient(90deg,var(--r1),var(--r3),var(--r4),var(--r5),var(--r7))}
+#prog{position:fixed;top:0;left:0;height:3px;width:100%;transform:scaleX(0);transform-origin:0 50%;z-index:300;background:linear-gradient(90deg,var(--r1),var(--r3),var(--r4),var(--r5),var(--r7))}
 .aur{position:fixed;inset:0;z-index:-1;overflow:hidden;filter:hue-rotate(var(--hue));transition:filter .4s}
 .aur i{position:absolute;border-radius:50%;filter:blur(100px);opacity:.28;animation:fl 20s ease-in-out infinite}
 .aur i:nth-child(1){width:460px;height:460px;background:var(--r7);top:-150px;left:-140px}
@@ -143,6 +143,12 @@ h2.sec small{font:500 13px Manrope,sans-serif;color:var(--dim)} h2.sec .add{marg
 #toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,30px);opacity:0;background:var(--text);color:var(--bg);padding:10px 18px;border-radius:12px;font-weight:700;transition:.3s;z-index:500;pointer-events:none} #toast.on{opacity:1;transform:translate(-50%,0)}
 footer{color:var(--dim);font-size:13px;text-align:center;padding:40px 0 44px}
 #sp{position:fixed;width:8px;height:8px;border-radius:50%;pointer-events:none;z-index:250}
+html.lite .aur{display:none}
+html.lite body{background:radial-gradient(70% 40% at 0% 10%,color-mix(in srgb,var(--r7) 14%,transparent),transparent 70%),radial-gradient(60% 40% at 100% 60%,color-mix(in srgb,var(--r5) 12%,transparent),transparent 70%),var(--bg)}
+html.lite *{backdrop-filter:none !important;-webkit-backdrop-filter:none !important}
+html.lite header{background:color-mix(in srgb,var(--bg) 94%,transparent)}
+html.lite h1 .w.g{filter:none}
+html.lite .grp .cov::before{animation:none}
 @media (prefers-reduced-motion: reduce){*{animation-duration:.01s !important;animation-delay:0s !important;transition:none !important} .rv{opacity:1;transform:none}}
 *{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--c1) 70%,transparent) transparent}
 </style>
@@ -200,6 +206,7 @@ const ls={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k
 const toMin=t=>{const [h,m]=String(t).split(':').map(Number);return h*60+(m||0)};
 const dayOf=d=>DAYS[(d.getDay()+6)%7];
 const pad=n=>String(n).padStart(2,'0');
+const LITE=!matchMedia('(hover:hover) and (pointer:fine)').matches||matchMedia('(max-width:860px)').matches; if(LITE) document.documentElement.classList.add('lite');
 const hm=t=>{const [h,m]=String(t).split(':');return pad(+h)+':'+pad(+m||0)};
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('on'),2600)}
 function pl(n,a,b,c){n=Math.abs(n)%100;const n1=n%10;if(n>10&&n<20)return c;if(n1>1&&n1<5)return b;if(n1===1)return a;return c}
@@ -337,23 +344,24 @@ setTheme(ls.get('zan_theme')||(matchMedia('(prefers-color-scheme: dark)').matche
 $('#themeBtn').onclick=()=>setTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');
 $$('h2.sec').forEach(e=>e.classList.add('rv'));
 (function(){const els=$$('.rv');if(!('IntersectionObserver' in window)){els.forEach(e=>e.classList.add('in'));return}const io=new IntersectionObserver(es=>es.forEach(x=>{if(x.isIntersecting){x.target.classList.add('in');io.unobserve(x.target)}}),{threshold:.08});els.forEach(e=>io.observe(e))})();
-addEventListener('scroll',()=>{const h=document.documentElement,p=h.scrollTop/(h.scrollHeight-h.clientHeight||1);$('#prog').style.width=(p*100)+'%';document.documentElement.style.setProperty('--hue',(p*160)+'deg')},{passive:true});
+{let tk=false;addEventListener('scroll',()=>{if(tk)return;tk=true;requestAnimationFrame(()=>{tk=false;const h=document.documentElement,p=h.scrollTop/(h.scrollHeight-h.clientHeight||1);$('#prog').style.transform='scaleX('+p+')';if(!LITE)h.style.setProperty('--hue',(p*160)+'deg')})},{passive:true})}
 if(matchMedia('(hover:hover)').matches) $$('.mag').forEach(b=>{b.onpointermove=e=>{const r=b.getBoundingClientRect();b.style.transform=`translate(${(e.clientX-r.left-r.width/2)*.18}px,${(e.clientY-r.top-r.height/2)*.28}px)`};b.onpointerleave=()=>{b.style.transform=''}});
 /* canvas: часовые кольца и огоньки */
-(function(){const cv=$('#cv'),cx=cv.getContext('2d');if(!cx)return;const red=matchMedia('(prefers-reduced-motion: reduce)').matches;let W,H,dpr=Math.min(devicePixelRatio||1,2),mx=.5,my=.5,t=0,vis=true;
+(function(){const cv=$('#cv'),cx=cv.getContext('2d');if(!cx)return;const red=matchMedia('(prefers-reduced-motion: reduce)').matches;let W,H,dpr=LITE?.6:Math.min(devicePixelRatio||1,2),mx=.5,my=.5,t=0,vis=true,lw=0;
   const COL=['#f43f5e','#fb923c','#facc15','#22c55e','#06b6d4','#6366f1','#d946ef'];
-  const P=Array.from({length:60},()=>({a:Math.random()*6.28,r:.12+Math.random()*.62,s:(Math.random()-.5)*.0009,z:Math.random()*2.4+.7,c:COL[(Math.random()*7)|0]}));
-  const size=()=>{const r=cv.getBoundingClientRect();W=r.width;H=r.height;cv.width=W*dpr;cv.height=H*dpr;cx.setTransform(dpr,0,0,dpr,0,0)};size();addEventListener('resize',size);
+  const P=Array.from({length:LITE?26:60},()=>({a:Math.random()*6.28,r:.12+Math.random()*.62,s:(Math.random()-.5)*.0009,z:Math.random()*2.4+.7,c:COL[(Math.random()*7)|0]}));
+  const size=()=>{const r=cv.getBoundingClientRect();if(LITE&&W&&lw===r.width)return;lw=r.width;W=r.width;H=r.height;cv.width=W*dpr;cv.height=H*dpr;cx.setTransform(dpr,0,0,dpr,0,0)};size();addEventListener('resize',size);
   cv.parentElement.addEventListener('pointermove',e=>{const r=cv.getBoundingClientRect();mx=(e.clientX-r.left)/r.width;my=(e.clientY-r.top)/r.height});
-  new IntersectionObserver(es=>{vis=es[0].isIntersecting;if(vis&&!red)loop()}).observe(cv);
+  new IntersectionObserver(es=>{vis=es[0].isIntersecting;if(vis&&!red&&!run){run=true;requestAnimationFrame(loop)}}).observe(cv);
   function frame(){cx.clearRect(0,0,W,H);cx.globalCompositeOperation='lighter';const ox=W*(.74+(mx-.5)*.05),oy=H*(.46+(my-.5)*.06),R=Math.min(W,H)*.62;
-    for(let k=0;k<7;k++){const r=R*(.28+k*.12),a0=t*(.0004+k*.00012)*(k%2?-1:1)+k;cx.beginPath();cx.arc(ox,oy,r,a0,a0+3.4-k*.18);cx.strokeStyle=COL[k];cx.globalAlpha=.55;cx.lineWidth=3+k*.4;cx.lineCap='round';cx.shadowColor=COL[k];cx.shadowBlur=20;cx.stroke()}
+    for(let k=0;k<7;k++){const r=R*(.28+k*.12),a0=t*(.0004+k*.00012)*(k%2?-1:1)+k;cx.beginPath();cx.arc(ox,oy,r,a0,a0+3.4-k*.18);cx.strokeStyle=COL[k];cx.lineCap='round';if(LITE){cx.globalAlpha=.15;cx.lineWidth=12+k;cx.stroke();cx.globalAlpha=.65;cx.lineWidth=3+k*.4;cx.stroke()}else{cx.globalAlpha=.55;cx.lineWidth=3+k*.4;cx.shadowColor=COL[k];cx.shadowBlur=20;cx.stroke()}}
     for(let h=0;h<12;h++){const a=h/12*6.28-1.57,r1=R*1.12,r2=R*(h%3?1.16:1.22);cx.beginPath();cx.moveTo(ox+Math.cos(a)*r1,oy+Math.sin(a)*r1);cx.lineTo(ox+Math.cos(a)*r2,oy+Math.sin(a)*r2);cx.strokeStyle='#fff';cx.globalAlpha=.35;cx.lineWidth=2;cx.shadowBlur=0;cx.stroke()}
     const now=new Date(),ang=((now.getHours()%12)+now.getMinutes()/60)/12*6.28-1.57,am=now.getMinutes()/60*6.28-1.57;
-    [[ang,.5,6],[am,.72,4]].forEach(([a,l,w])=>{cx.beginPath();cx.moveTo(ox,oy);cx.lineTo(ox+Math.cos(a)*R*l,oy+Math.sin(a)*R*l);cx.strokeStyle='#fff';cx.globalAlpha=.8;cx.lineWidth=w;cx.shadowColor='#fff';cx.shadowBlur=14;cx.stroke()});
+    [[ang,.5,6],[am,.72,4]].forEach(([a,l,w])=>{cx.beginPath();cx.moveTo(ox,oy);cx.lineTo(ox+Math.cos(a)*R*l,oy+Math.sin(a)*R*l);cx.strokeStyle='#fff';cx.globalAlpha=.8;cx.lineWidth=w;if(!LITE){cx.shadowColor='#fff';cx.shadowBlur=14}cx.stroke()});
     cx.shadowBlur=0;P.forEach(o=>{o.a+=o.s*16;const x=ox+Math.cos(o.a)*R*(o.r+.5),y=oy+Math.sin(o.a)*R*(o.r+.5)*.9;cx.globalAlpha=.4+.4*Math.sin(t*.003+o.a*5);cx.fillStyle=o.c;cx.beginPath();cx.arc(x,y,o.z,0,6.28);cx.fill()});
     cx.globalAlpha=1;cx.globalCompositeOperation='source-over'}
-  function loop(){if(!vis)return;t+=16;frame();requestAnimationFrame(loop)}frame();if(!red)loop()})();
+  let sc=0,lf=0,run=false;if(LITE)addEventListener('scroll',()=>{sc=performance.now()},{passive:true});
+  function loop(ts){if(!vis){run=false;return}run=true;requestAnimationFrame(loop);if(LITE){if(ts-sc<180||ts-lf<32)return;lf=ts;t+=32}else t+=16;frame()}frame();if(!red){run=true;requestAnimationFrame(loop)}})();
 build(); render(); load(); setInterval(()=>{if(!document.hidden)load()},5*60e3); setInterval(()=>{if(!document.querySelector('.modal.on'))render()},60e3);
 </script>
 </body>
